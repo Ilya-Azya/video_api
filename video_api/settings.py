@@ -5,7 +5,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
 
-DEBUG = os.environ.get("DEBUG", "True") == "True"
+DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+
+if DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'loggers': {
+            'django.db.backends': {
+                'level': 'DEBUG',
+                'handlers': ['console'],
+            },
+        },
+    }
 
 ALLOWED_HOSTS = []
 
