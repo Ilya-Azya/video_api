@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -8,6 +9,7 @@ class Video(models.Model):
     name = models.CharField(max_length=255)
     total_likes = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     def __str__(self):
         return self.name
@@ -26,7 +28,6 @@ class VideoFile(models.Model):
 
     def __str__(self):
         return f"{self.video.name} ({self.quality})"
-
 
 class Like(models.Model):
     video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='likes')

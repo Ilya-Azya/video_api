@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
+from django.db import models
 from django.db.models import Sum, Subquery, OuterRef
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
-from django.db import models
 from .models import Video, Like
-from .serializers import VideoSerializer
+from .serializers import VideoSerializer, VideoFileSerializer
 
 User = get_user_model()
 
@@ -19,6 +20,10 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 class VideoViewSet(viewsets.ModelViewSet):
     queryset = Video.objects.all().prefetch_related('files')
     serializer_class = VideoSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+        serializer.save(total_likes=0)
 
     def get_permissions(self):
         if self.action in ['like', 'unlike']:
@@ -51,6 +56,21 @@ class VideoViewSet(viewsets.ModelViewSet):
             Video.objects.filter(pk=video.pk).update(total_likes=models.F('total_likes') - 1)
             return Response({'status': 'unliked'})
         return Response({'status': 'not liked'}, status=status.HTTP_400_BAD_REQUEST)
+
+    parser_classes = [MultiPartParser, FormParser]
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='upload-file')
+    def upload_file(self, request, pk=None):
+        video = self.get_object()
+
+        if video.owner != request.user and not request.user.is_staff:
+            return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = VideoFileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(video=video)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VideoIDsView(generics.ListAPIView):

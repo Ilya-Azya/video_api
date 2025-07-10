@@ -5,7 +5,8 @@ from .models import Video, VideoFile, Like
 class VideoFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoFile
-        fields = ['id', 'file', 'quality']
+        fields = ['id', 'video', 'file', 'quality']
+        read_only_fields = ['id', 'video']
 
 
 class VideoSerializer(serializers.ModelSerializer):
